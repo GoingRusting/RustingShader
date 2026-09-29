@@ -1,0 +1,8 @@
+__pycache__/
+.venv*/
+*.png
+!docs/images/*.png
+*.zip
+.idea/
+.vscode/
+.DS_Store
