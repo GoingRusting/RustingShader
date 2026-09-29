@@ -6,12 +6,40 @@ Soft PCSS shadows, deferred water with reflections and caustics, volumetric
 clouds and light, a real phased moon, and an End that looks like the last place
 in the universe. Plain GLSL 1.20, no build step: drop the folder in and play.
 
-<!-- Screenshots: put F2 shots in docs/images/ and link them here, e.g.
-![The End](docs/images/end.png) -->
+## Screenshots
+
+### The End
+
+![The End](docs/images/end.png)
+
+### Rain
+
+![Rain](docs/images/rain.png)
+
+### Water
+
+![Water](docs/images/water.png)
+
+### Sunset
+
+![Sunset](docs/images/sunset.png)
+
+### Night and moon
+
+![Night](docs/images/night.png)
+
+### Nether
+
+![Nether](docs/images/nether.png)
+
+### Glow
+
+![Glow](docs/images/glow.png)
 
 ## What is included
 
 **Glow**
+
 - Every light source gets a soft colored halo from its own emission buffer, tight neon edge plus wide bloom
 - Redstone glows: dust (brighter with more power), blocks, torches, lit ore, powered repeaters, comparators and observers
 - Furnace and candle flames, crystals, sculk, glow berries, Nether portal, copper bulbs, froglights
@@ -20,6 +48,7 @@ in the universe. Plain GLSL 1.20, no build step: drop the folder in and play.
 - Gems in ores sparkle a little (can be turned off)
 
 **Overworld**
+
 - Deferred lighting with PCSS soft shadows, warm torch light and glowing emissive blocks
 - Waving plants and leaves
 - Volumetric clouds that cast shadows on the ground
@@ -29,14 +58,17 @@ in the universe. Plain GLSL 1.20, no build step: drop the folder in and play.
 - Rain soaks the world: ground darkens, puddles form in the dips and reflect the sky, drops ring on water and puddles
 
 **Water**
+
 - Animated waves, refraction, screen-space reflections with sky fallback
 - Shoreline foam and caustics
 - Underwater: Snell's window, light shafts, depth-based absorption
 
 **Nether**
+
 - Full support with its own fog and lighting
 
 **End**
+
 - A gravitationally lensed black hole: photon ring, tilted accretion disk with
   Kepler rotation and Doppler beaming, and the far side of the disk bent over
   the top of the horizon
@@ -46,6 +78,7 @@ in the universe. Plain GLSL 1.20, no build step: drop the folder in and play.
   - **Colored**: violet nebulae and a dense starfield.
 
 **Post**
+
 - Bloom, auto exposure, lens flare, ACES tonemap, color grading, vignette
 
 ## Requirements
@@ -73,18 +106,18 @@ lighting, water, clouds, sky, post-processing, and End. Defaults live in
 
 Most useful knobs:
 
-| Setting | What it does |
-|---|---|
-| `END_STYLE` | Empty (horror, colorless) or Colored (nebulae) End |
-| `BH_SIZE`, `BH_SPIN`, `BH_BRIGHTNESS` | Black hole size, disk rotation speed, disk brightness |
-| `END_SMOKE_HEIGHT`, `END_SMOKE_DENSITY` | Where and how thick the End smoke is |
-| `GLOW_STRENGTH`, `EMISSIVE_STRENGTH` | Halo size around lights, brightness of glowing pixels |
-| `SHADOW_SOFTNESS` | Contact-hardening shadow blur |
-| `CLOUD_COVERAGE`, `CLOUD_STEPS` | Cloud amount and quality (steps cost the most) |
-| `VL_STEPS` | God ray quality |
-| `MOON_SIZE`, `MOON_BRIGHTNESS` | Custom moon |
-| `RAIN_OPACITY` | How visible rain is |
-| `PUDDLES`, `PUDDLE_AMOUNT` | Reflective rain puddles and how much ground they cover |
+| Setting                                 | What it does                                           |
+| --------------------------------------- | ------------------------------------------------------ |
+| `END_STYLE`                             | Empty (horror, colorless) or Colored (nebulae) End     |
+| `BH_SIZE`, `BH_SPIN`, `BH_BRIGHTNESS`   | Black hole size, disk rotation speed, disk brightness  |
+| `END_SMOKE_HEIGHT`, `END_SMOKE_DENSITY` | Where and how thick the End smoke is                   |
+| `GLOW_STRENGTH`, `EMISSIVE_STRENGTH`    | Halo size around lights, brightness of glowing pixels  |
+| `SHADOW_SOFTNESS`                       | Contact-hardening shadow blur                          |
+| `CLOUD_COVERAGE`, `CLOUD_STEPS`         | Cloud amount and quality (steps cost the most)         |
+| `VL_STEPS`                              | God ray quality                                        |
+| `MOON_SIZE`, `MOON_BRIGHTNESS`          | Custom moon                                            |
+| `RAIN_OPACITY`                          | How visible rain is                                    |
+| `PUDDLES`, `PUDDLE_AMOUNT`              | Reflective rain puddles and how much ground they cover |
 
 On a weaker GPU, lower `CLOUD_STEPS`, `VL_STEPS` and `shadowMapResolution` first.
 
@@ -107,9 +140,6 @@ tools/
 python3 tools/check.py            # prints "all OK" or the failing program
 python3 tools/preview.py out.png  # needs moderngl, numpy, pillow
 ```
-
-A detailed guide in Russian, covering the pipeline, how to add effects, and
-common pitfalls, is in [`docs/GUIDE.ru.md`](docs/GUIDE.ru.md).
 
 ## License
 
