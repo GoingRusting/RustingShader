@@ -44,7 +44,7 @@ const float sunPathRotation = -30.0; // [-45.0 -30.0 -15.0 0.0 15.0 30.0 45.0]
 #define UNDERWATER_RAYS_STRENGTH 1.0 // [0.25 0.5 1.0 1.5 2.0 3.0]
 
 #define VOLUMETRIC_CLOUDS
-#define CLOUD_COVERAGE 0.45  // [0.2 0.3 0.4 0.45 0.5 0.6 0.7 0.8]
+#define CLOUD_COVERAGE 0.5   // [0.2 0.3 0.4 0.45 0.5 0.6 0.7 0.8]
 #define CLOUD_HEIGHT 200.0   // [140.0 170.0 200.0 240.0 300.0]
 #define CLOUD_THICKNESS 110.0 // [60.0 80.0 110.0 150.0 200.0]
 #define CLOUD_SPEED 1.0      // [0.0 0.5 1.0 2.0 4.0]

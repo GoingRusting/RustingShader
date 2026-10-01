@@ -73,7 +73,7 @@ vec3 sceneAt(vec2 uv, float d, vec3 sunDir) {
         c += sunCol * disk * SUN_STRENGTH * 25.0 * (1.0 - rainStrength);
     #ifdef CUSTOM_MOON
         vec4 moon = moonColor(dir, -sunDir, moonPhase) * (1.0 - rainStrength * 0.9);
-        c = c * (1.0 - moon.a * 0.4) + moon.rgb;
+        c = c * (1.0 - moon.a) + moon.rgb;
     #endif
     }
 #endif

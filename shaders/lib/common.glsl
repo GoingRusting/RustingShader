@@ -117,37 +117,96 @@ vec3 directLightColor(vec3 sunDir) {
     return c * (1.0 - rainStrength * 0.85);
 }
 
+float moonBasin(vec2 p, vec2 center, vec2 extent, float edgeNoise) {
+    float dist = length((p - center) / extent);
+    return 1.0 - smoothstep(0.72, 1.12, dist + edgeNoise);
+}
+
+// Height and analytic slopes: raised rims, recessed bowls and central peaks.
+vec3 moonCrater(vec2 offset, float radius) {
+    float dist = length(offset);
+    float r = dist / radius;
+    if (r > 1.4) return vec3(0.0);
+    float t = clamp((r - 0.55) / 0.45, 0.0, 1.0);
+    float bowl = 1.0 - t * t * (3.0 - 2.0 * t);
+    float rim = exp(-pow((r - 1.0) / 0.13, 2.0));
+    float peak = exp(-r * r * 65.0);
+    float height = radius * (-0.12 * bowl + 0.065 * rim + 0.045 * peak);
+    float slope = 0.12 * 6.0 * t * (1.0 - t) / 0.45
+                - 0.13 * (r - 1.0) / (0.13 * 0.13) * rim
+                - 0.09 * 65.0 * r * peak;
+    return vec3(height, offset / max(dist, 0.0001) * slope);
+}
+
 vec4 moonColor(vec3 dir, vec3 moonDir, int phase) {
     if (dot(dir, moonDir) < 0.0) return vec4(0.0);
-    vec3 mu = normalize(cross(vec3(0.0, 1.0, 0.0), moonDir));
+    // A stable tangent frame also handles a moon directly overhead.
+    vec3 axis = abs(moonDir.y) > 0.99 ? vec3(0.0, 0.0, 1.0) : vec3(0.0, 1.0, 0.0);
+    vec3 mu = normalize(cross(axis, moonDir));
     vec3 mv = cross(moonDir, mu);
     vec2 p = vec2(dot(dir, mu), dot(dir, mv)) / (0.03 * MOON_SIZE);
     float r = length(p);
-    float ph = float(phase) / 8.0 * 6.2832;
+    float ph = float(phase) / 8.0 * 6.2831853;
     float full = 0.5 + 0.5 * cos(ph);
-    vec3 glow = vec3(0.55, 0.65, 1.0) * (exp(-r * 0.8) * 0.08 + exp(-r * 0.15) * 0.01) * full * MOON_BRIGHTNESS;
+    float halo = exp(-max(r - 1.0, 0.0) * 7.0) * 0.022
+               + exp(-r * r * 0.45) * 0.012;
+    vec3 glow = vec3(0.62, 0.73, 1.0) * halo * full * MOON_BRIGHTNESS;
     if (r >= 1.0) return vec4(glow, 0.0);
 
-    vec3 s = vec3(p, sqrt(1.0 - r * r));
-
+    vec3 s = vec3(p, sqrt(max(1.0 - r * r, 0.0)));
     vec3 ld = vec3(sin(ph), 0.0, cos(ph));
-    float light = smoothstep(-0.03, 0.12, dot(s, ld));
 
-    float maria = smoothstep(0.5, 0.68, vnoise3(s * 2.2 + 3.0) * 0.7 + vnoise3(s * 5.0 + 1.0) * 0.3);
-    float alb = mix(0.95, 0.42, maria);
+    // Connected dark seas with rough coastlines and brighter southern highlands.
+    float edge = (vnoise3(s * 12.0 + 3.7) - 0.5) * 0.38;
+    vec2 basinPos = p + (vec2(vnoise(p * 7.0 + 2.3), vnoise(p * 7.0 - 4.7)) - 0.5) * 0.10;
+    float maria = moonBasin(basinPos, vec2(-0.48, 0.05), vec2(0.30, 0.47), edge);
+    maria = max(maria, moonBasin(basinPos, vec2(-0.24, 0.40), vec2(0.28, 0.30), edge));
+    maria = max(maria, moonBasin(basinPos, vec2(0.20, 0.25), vec2(0.19, 0.23), edge));
+    maria = max(maria, moonBasin(basinPos, vec2(0.36, 0.02), vec2(0.24, 0.22), edge));
+    maria = max(maria, moonBasin(basinPos, vec2(0.53, -0.20), vec2(0.17, 0.24), edge));
+    float alb = mix(0.72, 0.25, maria);
+    alb *= 0.86 + 0.24 * vnoise3(s * 24.0 + 1.3);
+    alb *= 0.94 + 0.12 * vnoise3(s * 85.0);
 
+    vec3 terrain = vec3(0.0);
     for (int i = 0; i < 2; i++) {
-        vec3 cs = s * (i == 0 ? 6.0 : 14.0);
-        vec3 cell = floor(cs);
-        vec3 c = vec3(hash13(cell), hash13(cell + 2.1), hash13(cell + 4.7)) * 0.4 + 0.3;
-        float cd = length(fract(cs) - c) / (0.12 + 0.18 * hash13(cell + 9.0));
-        if (hash13(cell + 6.0) > 0.45)
-            alb *= 1.0 - 0.22 * smoothstep(0.95, 0.5, cd) + 0.2 * smoothstep(0.75, 0.95, cd) * smoothstep(1.3, 0.95, cd);
+        float scale = i == 0 ? 5.0 : 13.0;
+        vec2 cell = floor(p * scale);
+        for (int y = -1; y <= 1; y++) {
+            for (int x = -1; x <= 1; x++) {
+                vec2 id = cell + vec2(float(x), float(y));
+                float seed = hash12(id + float(i) * 31.7);
+                if (seed < 0.32) continue;
+                vec2 center = id + vec2(hash12(id + 4.1), hash12(id + 9.3));
+                vec3 crater = moonCrater(p * scale - center, mix(0.16, 0.42, seed));
+                terrain += vec3(crater.x / scale, crater.yz) * mix(1.0, 0.45, maria);
+            }
+        }
     }
-    alb *= 0.85 + 0.3 * vnoise3(s * 30.0);
-    float limb = 0.7 + 0.3 * s.z;
-    vec3 col = vec3(1.0, 0.97, 0.92) * alb * limb * (light + 0.004) * MOON_BRIGHTNESS;
-    return vec4(col, smoothstep(1.0, 0.97, r));
+
+    // A prominent southern crater and its faint, irregular ejecta rays.
+    vec2 rayPos = p - vec2(0.12, -0.60);
+    terrain += moonCrater(rayPos, 0.075);
+    float angle = atan(rayPos.y, rayPos.x);
+    float rays = pow(0.5 + 0.5 * sin(angle * 19.0 + vnoise(p * 16.0) * 4.0), 10.0);
+    rays *= exp(-length(rayPos) * 3.5) * smoothstep(0.075, 0.13, length(rayPos));
+    alb *= 1.0 + rays * 0.30;
+    alb *= clamp(1.0 + terrain.x * 5.0, 0.80, 1.15);
+
+    vec3 normal = normalize(s - vec3(terrain.yz, 0.0) * 0.45);
+    // Ease illumination across the terminator instead of cutting it off.
+    float normalLight = dot(normal, ld);
+    float incidence = 0.5 * (normalLight + sqrt(normalLight * normalLight + 0.0064));
+    float lit = smoothstep(-0.18, 0.24, dot(s, ld));
+    float diffuse = incidence / max(incidence + s.z, 0.025);
+    float light = lit * (0.55 * incidence + 0.80 * diffuse);
+    // Keep the shadowed terrain faintly readable through every phase.
+    float earthshine = 0.025 + 0.025 * (1.0 - full);
+    vec3 tint = mix(vec3(1.0, 0.97, 0.92), vec3(0.83, 0.88, 0.96), maria * 0.45);
+    vec3 col = tint * alb * light + vec3(0.56, 0.66, 0.88) * alb * earthshine;
+    col *= MOON_BRIGHTNESS * (0.88 + 0.12 * s.z);
+    float mask = 1.0 - smoothstep(0.994, 1.0, r);
+    return vec4(col * mask + glow * (1.0 - mask), mask);
 }
 
 vec3 aurora(vec3 dir, vec3 sunDir) {

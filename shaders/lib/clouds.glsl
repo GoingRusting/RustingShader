@@ -8,10 +8,16 @@ float cloudDensity(vec3 p, int lod) {
     vec2 q = p.xz * 0.0035;
     float base = vnoise(q) * 0.55 + vnoise(q * 2.3 + 1.7) * 0.30 + vnoise(q * 5.3 - 3.1) * 0.15;
 
+    // Broad lobes and smaller billows lift the base by different amounts.
+    // Dense cores hang lower, keeping the underside connected to the body.
+    float bottom = 0.04 + vnoise(q * 1.7 + 8.3) * 0.22
+                        + vnoise(q * 4.1 - 5.7) * 0.10;
+    bottom -= smoothstep(0.55, 0.8, base) * 0.12;
+    bottom = max(bottom, 0.02);
+
     float cover = CLOUD_COVERAGE + rainStrength * 0.3;
     float d = base - (1.0 - cover) - h * h * 0.3;
-    d *= smoothstep(0.0, 0.1, h);
-    if (d <= 0.0) return 0.0;
+    if (d <= 0.0 || h <= bottom) return 0.0;
 
     vec3 r = p * 0.02;
     float det = 0.0, amp = 0.5;
@@ -21,8 +27,9 @@ float cloudDensity(vec3 p, int lod) {
         r *= 2.3;
         amp *= 0.5;
     }
-    d -= det * 0.18;
-    return clamp(d * 5.0, 0.0, 1.0);
+    // Keep more of the cloud body intact while retaining detail at the edges.
+    d -= det * 0.14;
+    return clamp(d * 6.5, 0.0, 1.0) * smoothstep(bottom, bottom + 0.12, h);
 }
 
 float cloudShadow(vec3 worldPos, vec3 lightDir) {
@@ -65,9 +72,9 @@ vec4 renderClouds(vec3 dir, float maxDist, vec3 lightDir, vec3 sunLight, vec3 am
             od += cloudDensity(p + lightDir * s, 1) * s * 0.5;
         }
         float h = (p.y - lo) / CLOUD_THICKNESS;
-        vec3 sun = sunLight * (exp(-od * 0.10) + exp(-od * 0.025) * 0.3) * phase * 0.9;
-        vec3 amb = ambient * (0.25 + 0.75 * h);
-        float stepT = exp(-d * stepLen * 0.08);
+        vec3 sun = sunLight * (exp(-od * 0.10) + exp(-od * 0.025) * 0.22) * phase * 0.9;
+        vec3 amb = ambient * (0.20 + 0.70 * h);
+        float stepT = exp(-d * stepLen * 0.10);
 
         scatter += trans * (sun + amb) * (1.0 - stepT);
         trans *= stepT;
